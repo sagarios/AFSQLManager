@@ -1,0 +1,131 @@
+//
+//  ViewController.m
+//  json db table
+//
+//  Created by Sagar on 10/10/15.
+//  Copyright © 2015 Sagar. All rights reserved.
+//
+
+#import "ViewController.h"
+#import "AFSQLManager.h"
+@interface ViewController (){
+    NSMutableArray *companynames;
+    UITableView *tableview;
+}
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
+    tableview =[[UITableView alloc]initWithFrame:CGRectMake(0, 0, 300, 600)];
+    tableview.delegate=self;
+    tableview.dataSource=self;
+   // [self.view addSubview:tableview];
+    
+ //   [self tableview];
+    
+    
+    NSString *urlstr=@"http://auth.vvm.in/pentaho/content/cda/doQuery?solution=VVPAINTS&path=Dashboard&file=BaaSClient.cda&userid=serviceuser&password=123456&dataAccessId=clientDtlQry&paramSigninUser=serviceuser";
+    NSURL *url=[NSURL URLWithString:urlstr];
+    NSData *Data=[NSData dataWithContentsOfURL:url];
+    if (Data!=nil) {
+        NSDictionary *dickdata=[NSJSONSerialization JSONObjectWithData:Data options:kNilOptions error:nil];
+        NSArray *resultsetdata=[dickdata objectForKey:@"resultset"];
+        // NSLog(@"***%@",resultsetdata);
+        
+        companynames=[NSMutableArray new];
+        for (int i=0; i<resultsetdata.count; i++) {
+            NSArray *companydetails=[resultsetdata objectAtIndex:i];
+            NSString *strcompenydata=[companydetails objectAtIndex:0];
+            [companynames addObject:strcompenydata];
+            
+        }
+        NSLog(@"%@",companynames);
+        
+        
+        
+        
+        
+        
+    } else {
+        NSLog(@"error");
+    }
+    
+    [self database];
+    
+    
+}
+
+
+  -(void)database
+{
+    [[AFSQLManager sharedManager]openLocalDatabaseWithName:@"my-awesome-db.sql" andStatusBlock:^(BOOL success, NSError *error) {
+        if (success) {
+            // Yeah, database created successfully
+            [[AFSQLManager sharedManager]performQuery:@"CREATE RABLE IF NOT EXISTS VVBTable(companynames TEXT,IMAGE TEXT)"    withBlock:^(NSArray *row, NSError *error, BOOL finished) {
+                // Handle each row
+                for (int i=0; i<companynames.count; i++) {
+                    NSString *str=[companynames objectAtIndex:i];
+                NSString *companynamedb= [NSString stringWithFormat:@"INSERT INTO VVBTable(companynames) values(%@)",str];
+                    
+                    [[AFSQLManager sharedManager]performQuery:companynamedb    withBlock:^(NSArray *row, NSError *error, BOOL finished){
+                    
+                    
+                    
+                    
+                    }];
+             
+                    [[AFSQLManager sharedManager]performQuery:@"SELECT * FROM VVBTable"    withBlock:^(NSArray *row, NSError *error, BOOL finished){
+                        
+                        
+                        
+                        
+                    }];
+                    
+                    
+                }
+               
+                 }];
+                } else {
+                    NSLog(@"table not created");
+                }
+        
+       
+}];
+    
+    
+    
+}
+-(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return 1;
+}
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 100;
+}
+-(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+NSString *str=@"identifier";
+    UITableViewCell *cell=[tableview dequeueReusableCellWithIdentifier:str];
+
+    return cell;
+}
+    
+    
+    
+    
+    
+
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+@end
